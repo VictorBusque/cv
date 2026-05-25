@@ -1,0 +1,33 @@
+name: Build CV PDF
+
+on:
+  push:
+    branches: ["*"]
+  pull_request:
+    branches: ["*"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: danteev/texlive:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build PDF (pass 1)
+        run: |
+          mkdir -p out
+          xelatex -interaction=nonstopmode -output-directory=out main.tex
+
+      - name: Build PDF (pass 2)
+        run: |
+          xelatex -interaction=nonstopmode -output-directory=out main.tex
+
+      - name: Upload PDF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cv-pdf
+          path: out/main.pdf
+          retention-days: 30
