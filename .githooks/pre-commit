@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Pre-commit hook: verify main.tex compiles successfully before allowing a commit.
+set -euo pipefail
+
+# Only check if main.tex is staged or modified
+if git diff --cached --name-only | grep -q "main.tex" || git diff --name-only | grep -q "main.tex"; then
+    echo "🔍 main.tex changed — verifying build..."
+    if ! ./build.sh > /dev/null 2>&1; then
+        echo "❌ Build failed. Fix main.tex before committing."
+        echo "   Run './build.sh' or 'make build' to see errors."
+        exit 1
+    fi
+    echo "✅ Build check passed"
+    # Clean up artifacts so they don't end up in the commit
+    ./build.sh clean > /dev/null 2>&1 || true
+fi

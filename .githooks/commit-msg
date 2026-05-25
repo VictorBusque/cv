@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# Pre-commit hook: check conventional commit message format.
+# Types: cv, ci, docs, chore, fix, refactor
+# Format: <type>: <description>
+#
+# Examples:
+#   cv: added new dLocal bullet point
+#   ci: updated release workflow
+#   docs: updated README
+#   chore: updated .gitignore
+
+MSG_FILE="$1"
+SOURCE="${2:-}"
+
+# Only validate user-typed messages (not merges, amend, etc.)
+if [ "$SOURCE" = "message" ] || [ "$SOURCE" = "template" ]; then
+    exit 0
+fi
+
+MSG=$(head -1 "$MSG_FILE")
+
+# Allow empty commits
+if [ -z "$MSG" ]; then
+    exit 0
+fi
+
+# Allow merge commits
+if echo "$MSG" | grep -qE "^Merge "; then
+    exit 0
+fi
+
+# Conventional commit: type: description
+VALID_TYPES="cv|ci|docs|chore|fix|refactor"
+
+if ! echo "$MSG" | grep -qE "^(${VALID_TYPES}): .+"; then
+    echo "❌ Invalid commit message format."
+    echo ""
+    echo "   Expected: <type>: <description>"
+    echo "   Got:      ${MSG}"
+    echo ""
+    echo "   Valid types: cv, ci, docs, chore, fix, refactor"
+    echo ""
+    echo "   Examples:"
+    echo "     cv: added new dLocal bullet point"
+    echo "     ci: updated release workflow"
+    echo "     docs: updated README"
+    exit 1
+fi
+
+# Check line length
+if [ ${#MSG} -gt 72 ]; then
+    echo "❌ Commit message too long (${#MSG} chars, max 72)."
+    echo "   ${MSG}"
+    exit 1
+fi
