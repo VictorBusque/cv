@@ -47,12 +47,27 @@ Copy a `\resumeProjectHeading{...}` block inside the Projects section.
 
 ## Building
 
+### Local
+
 ```bash
 ./build.sh        # build PDF
 ./build.sh clean  # remove artifacts
 ```
 
 If `xelatex` fails, check that `texlive-fonts-extra` and `fontawesome5` are installed.
+
+### CI (GitHub Actions)
+
+Every push to `main` triggers `.github/workflows/build.yml`, which:
+
+1. Computes the next **auto-version** tag in `YYYY.MM.N` format (e.g. `2026.05.1`, `2026.05.2`).
+   - `YYYY.MM` = year and month of the commit date.
+   - `N` = patch number, auto-incremented by counting existing tags with the same prefix.
+2. Builds `main.tex` → `out/main.pdf` (two-pass XeLaTeX) inside a `danteev/texlive:latest` container.
+3. Uploads the PDF as a **GitHub Actions artifact** (`cv-pdf-<version>`).
+4. Creates a **GitHub Release** tagged `v<version>` with the versioned PDF (`Victor_Busque_CV_<version>.pdf`) attached.
+
+Releases are listed at: `https://github.com/VictorBusque/cv/releases`
 
 ## Working with the Internet Skill
 
@@ -74,5 +89,6 @@ Use the **internet skill** for tasks that benefit from web data:
 
 ## Output
 
-- The compiled PDF goes to `out/main.pdf`.
+- **Local:** compiled PDF goes to `out/main.pdf`.
+- **CI:** each `main` push produces a GitHub Release (tag `vYYYY.MM.N`) with `Victor_Busque_CV_YYYY.MM.N.pdf` attached.
 - Do not commit `out/` contents unless explicitly asked — it's a build artifact.

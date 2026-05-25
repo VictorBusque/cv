@@ -1,13 +1,14 @@
-name: Build CV PDF
+name: Build & Release CV PDF
 
 on:
   push:
-    branches: ["*"]
-  pull_request:
-    branches: ["*"]
+    branches: [main]
+
+permissions:
+  contents: write
 
 jobs:
-  build:
+  build-and-release:
     runs-on: ubuntu-latest
     container:
       image: danteev/texlive:latest
@@ -15,6 +16,19 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute next version
+        id: version
+        run: |
+          PREFIX="$(date +%Y.%m)"
+          COUNT=$(git tag -l "${PREFIX}.*" | wc -l | tr -d ' ')
+          PATCH=$((COUNT + 1))
+          VERSION="${PREFIX}.${PATCH}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Next release: ${VERSION}"
 
       - name: Build PDF (pass 1)
         run: |
@@ -25,9 +39,23 @@ jobs:
         run: |
           xelatex -interaction=nonstopmode -output-directory=out main.tex
 
+      - name: Rename PDF with version
+        run: |
+          cp out/main.pdf "Victor_Busque_CV_${{ steps.version.outputs.version }}.pdf"
+
       - name: Upload PDF artifact
         uses: actions/upload-artifact@v4
         with:
-          name: cv-pdf
+          name: cv-pdf-${{ steps.version.outputs.version }}
           path: out/main.pdf
           retention-days: 30
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: "CV ${{ steps.version.outputs.version }}"
+          body: |
+            Automatically built CV PDF from commit `${{ github.sha }}`.
+          files: |
+            Victor_Busque_CV_${{ steps.version.outputs.version }}.pdf
