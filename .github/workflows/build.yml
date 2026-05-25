@@ -65,39 +65,26 @@ jobs:
 
       - name: Install diff tools
         run: |
-          apt-get update && apt-get install -y poppler-utils diffutils > /dev/null 2>&1
+          sudo apt-get update && sudo apt-get install -y poppler-utils > /dev/null 2>&1
 
       - name: Generate visual diff
         run: |
           mkdir -p diff-output
 
-          if [ -f ./old/*.pdf ]; then
+          if ls ./old/*.pdf 1>/dev/null 2>&1; then
             OLD_PDF=$(ls ./old/*.pdf | head -1)
-            NEW_PDF=$(ls ./new/main.pdf)
+            NEW_PDF=./new/main.pdf
 
             # Convert both PDFs to images for visual comparison
             mkdir -p old-pages new-pages
             pdftoppm -png -r 150 "$OLD_PDF" old-pages/page
             pdftoppm -png -r 150 "$NEW_PDF" new-pages/page
 
-            # Pixel-level diff per page
-            shopt -s nullglob
-            for img in new-pages/*.png; do
-              base=$(basename "$img")
-              page_num=$(echo "$base" | grep -oP '\d+')
-              old_img="old-pages/old-${page_num}.png"
-
-              if [ -f "$old_img" ]; then
-                # Use ImageMagick compare if available, otherwise just list both
-                compare -metric AE "$old_img" "$img" "diff-output/diff-page-${page_num}.png" 2>/dev/null || true
-              fi
-            done
-
-            # Also store side-by-side copies for manual review
+            # Store both sets of page images for manual side-by-side review
             cp old-pages/*.png diff-output/ 2>/dev/null || true
             cp new-pages/*.png diff-output/ 2>/dev/null || true
           else
-            echo "No previous release found — skipping diff, new PDF only."
+            echo "No previous release found — uploading new PDF pages only."
             pdftoppm -png -r 150 ./new/main.pdf diff-output/new-page
           fi
 
@@ -113,8 +100,6 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
-    container:
-      image: danteev/texlive:latest
 
     steps:
       - name: Checkout repository
