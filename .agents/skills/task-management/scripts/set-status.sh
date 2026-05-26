@@ -4,7 +4,7 @@
 # Auto-sets finished_at on done/cancelled, updates updated_at.
 set -euo pipefail
 
-TASKS_DIR="$(git -C "$(dirname "$0")" rev-parse --show-toplevel 2>/dev/null)/tasks/workitems"
+source "$(dirname "$0")/task-utils.sh"
 
 if [[ $# -lt 2 ]]; then
   echo "Usage: set-status.sh <task-id> <status> [--branch B] [--result R]" >&2
@@ -29,15 +29,10 @@ done
 [[ "$NEW_STATUS" =~ ^(open|doing|review|done|blocked|cancelled)$ ]] || { echo "Invalid status: $NEW_STATUS" >&2; exit 1; }
 
 # Resolve task file
-num=$(echo "$raw_id" | tr -d 'task-')
-num=$((10#$num))
-id_padded=$(printf "%03d" "$num")
-filepath="$TASKS_DIR/task-${id_padded}.md"
-
-[ -f "$filepath" ] || { echo "Error: task file not found: $filepath" >&2; exit 1; }
+filepath=$(resolve_task_file "$raw_id")
 
 # Get current status
-current=$(grep -m1 '^status:' "$filepath" | sed 's/^status: *//')
+current=$(fm_get "$filepath" "status")
 
 # Validate transition
 case "$current" in
@@ -46,25 +41,24 @@ case "$current" in
 esac
 
 # Update status
-sed -i "0,/^status:.*/{s|^status:.*|status: $NEW_STATUS|}" "$filepath"
+fm_set "$filepath" "status" "$NEW_STATUS"
 
-# Update timestamp
-updated=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-sed -i "0,/^updated_at:.*/{s|^updated_at:.*|updated_at: \"$updated\"|}" "$filepath"
+# Bump updated_at
+touch_updated "$filepath"
 
 # Handle terminal states
 if [[ "$NEW_STATUS" == "done" || "$NEW_STATUS" == "cancelled" ]]; then
-  sed -i "0,/^finished_at:.*/{s|^finished_at:.*|finished_at: \"$updated\"|}" "$filepath"
+  fm_set_quoted "$filepath" "finished_at" "$(now_utc)"
 fi
 
 # Handle branch
 if [[ -n "$BRANCH" ]]; then
-  sed -i "0,/^branch:.*/{s|^branch:.*|branch: \"$BRANCH\"|}" "$filepath"
+  fm_set_quoted "$filepath" "branch" "$BRANCH"
 fi
 
 # Handle result
 if [[ -n "$RESULT" ]]; then
-  sed -i "0,/^result:.*/{s|^result:.*|result: \"$RESULT\"|}" "$filepath"
+  fm_set_quoted "$filepath" "result" "$RESULT"
 fi
 
 echo "$filepath"
