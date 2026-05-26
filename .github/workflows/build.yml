@@ -3,6 +3,8 @@ name: Build & Release CV PDF
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'CHANGELOG.md'
   pull_request:
     branches: [main]
 
@@ -113,6 +115,9 @@ jobs:
           name: cv-pdf
           path: ./out
 
+      - name: Fetch tags
+        run: git fetch --tags --prune-tags
+
       - name: Compute next version
         id: version
         run: |
@@ -179,7 +184,7 @@ jobs:
       - name: Commit CHANGELOG.md
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: update CHANGELOG.md for v${{ steps.version.outputs.version }}"
+          commit_message: "chore: update CHANGELOG.md for v${{ steps.version.outputs.version }} [skip ci]"
           file_pattern: CHANGELOG.md
 
       - name: Create GitHub Release
