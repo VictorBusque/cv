@@ -117,21 +117,33 @@ jobs:
 
       - name: Compute next version
         id: version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git fetch --tags --prune-tags
           PREFIX="$(date +%Y.%m)"
-          # Use remote tags directly to avoid local checkout issues
-          COUNT=$(git ls-remote --tags origin "refs/tags/${PREFIX}.*" | wc -l | tr -d ' ')
+          # Count existing releases with this prefix via GitHub API
+          COUNT=$(gh release list --limit 100 --json tagName -q ".[].tagName" | grep -c "^v${PREFIX}\." || true)
           PATCH=$((COUNT + 1))
           VERSION="${PREFIX}.${PATCH}"
+          TAG="v${VERSION}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "Next release: ${VERSION}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Next release: ${TAG}"
+
+          # Guard: fail if tag already exists
+          if gh release view "${TAG}" 2>/dev/null; then
+            echo "::error::Release ${TAG} already exists! Aborting."
+            exit 1
+          fi
 
       - name: Generate changelog
         id: changelog
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          PREV_TAG=$(git tag --sort=-version:refname | head -1)
+          PREV_TAG=$(gh release list --limit 1 --json tagName -q '.[0].tagName' 2>/dev/null || true)
+          git fetch --tags --prune-tags
+
           if [ -n "$PREV_TAG" ]; then
             echo "prev_tag=${PREV_TAG}" >> "$GITHUB_OUTPUT"
             NOTES=$(git log "${PREV_TAG}"..HEAD --pretty=format:"- %s" --no-merges)
@@ -187,13 +199,12 @@ jobs:
           file_pattern: CHANGELOG.md
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.version.outputs.tag }}
-          name: "CV ${{ steps.version.outputs.version }}"
-          body: |
-            ## Changes since ${{ steps.changelog.outputs.prev_tag }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            "Victor_Busque_CV_${{ steps.version.outputs.version }}.pdf" \
+            --title "CV ${{ steps.version.outputs.version }}" \
+            --notes "## Changes since ${{ steps.changelog.outputs.prev_tag }}
 
-            ${{ steps.changelog.outputs.notes }}
-          files: |
-            Victor_Busque_CV_${{ steps.version.outputs.version }}.pdf
+          ${{ steps.changelog.outputs.notes }}"
