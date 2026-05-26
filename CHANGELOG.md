@@ -1,7 +1,9 @@
 # Changelog
 
-## v2026.05.1 (2026-05-26)
+## v2026.05.2 (2026-05-26)
 
+- ci: rewrite release versioning to use gh API for tag counting
+- chore: update CHANGELOG.md for v2026.05.1 [skip ci]
 - ci: use git ls-remote for reliable tag counting
 - chore: update CHANGELOG.md for v2026.05.1 [skip ci]
 - ci: fix release versioning loop and tag overwrite
