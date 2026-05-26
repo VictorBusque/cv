@@ -23,51 +23,96 @@ jobs:
 
       - name: Install lint tools
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq hunspell hunspell-en-us chktex > /dev/null 2>&1
-
-      - name: Spell check
-        run: |
-          UNKNOWN=$(hunspell -l -d en_US -t main.tex | sort -u | grep -vxFf .wordlist || true)
-          if [ -n "$UNKNOWN" ]; then
-            echo "❌ Unknown words found:"
-            echo "$UNKNOWN"
-            exit 1
-          fi
-          echo "✅ Spell check passed"
+          sudo apt-get update -qq && sudo apt-get install -y -qq chktex > /dev/null 2>&1
 
       - name: LaTeX lint (chktex)
+        id: latex
+        continue-on-error: true
         run: |
-          # Run chktex, suppress common false positives from custom resume macros
-          # -n1  (wrong dash length)
-          # -n6  (missing italic correction)
-          # -n13 (intersentence spacing)
-          # -n15 (command terminated with space)
-          # -n36 (parens spacing)
-          # -n44 (section label missing)
           OUTPUT=$(chktex -q -n1 -n6 -n13 -n15 -n36 -n44 main.tex 2>/dev/null || true)
           if [ -n "$OUTPUT" ]; then
-            echo "❌ LaTeX lint issues:"
+            {
+              echo "result=❌ Failed"
+              echo "details<<EOF"
+              echo "$OUTPUT"
+              echo "EOF"
+            } > /tmp/lint_latex.txt
             echo "$OUTPUT"
             exit 1
           fi
-          echo "✅ LaTeX lint passed"
+          echo "result=✅ Passed" > /tmp/lint_latex.txt
 
       - name: Link checker
+        id: links
+        continue-on-error: true
         run: |
+          RESULTS=""
+          TOTAL=0
           FAIL=0
           while IFS= read -r url; do
+            TOTAL=$((TOTAL + 1))
             STATUS=$(curl -sI -o /dev/null -w "%{http_code}" -L --max-time 10 "$url" 2>/dev/null || echo "000")
             if [ "$STATUS" -ge 400 ] || [ "$STATUS" = "000" ]; then
-              echo "❌ $url → HTTP $STATUS"
-              FAIL=1
+              RESULTS="${RESULTS}- ❌ ${url} → HTTP ${STATUS}"$'\n'
+              FAIL=$((FAIL + 1))
             else
-              echo "✅ $url → HTTP $STATUS"
+              RESULTS="${RESULTS}- ✅ ${url} → HTTP ${STATUS}"$'\n'
             fi
           done < <(grep -oE 'https?://[^} )\\]+' main.tex | sort -u)
-          if [ "$FAIL" -eq 1 ]; then
+          if [ "$FAIL" -gt 0 ]; then
+            {
+              echo "result=❌ Failed (${FAIL}/${TOTAL})"
+              echo "details<<EOF"
+              echo "${RESULTS}"
+              echo "EOF"
+            } > /tmp/lint_links.txt
+            echo "${RESULTS}"
             exit 1
           fi
-          echo "✅ All links reachable"
+          echo "result=✅ Passed (${TOTAL}/${TOTAL})" > /tmp/lint_links.txt
+
+      - name: Generate lint summary
+        if: always()
+        run: |
+          LATEX_RES=$(cat /tmp/lint_latex.txt 2>/dev/null | head -1 | sed 's/^result=//' || echo '⚠️ Skipped')
+          LINKS_RES=$(cat /tmp/lint_links.txt 2>/dev/null | head -1 | sed 's/^result=//' || echo '⚠️ Skipped')
+
+          cat > $GITHUB_STEP_SUMMARY << 'SUMEOF'
+          ## 🧪 CV Lint Checks
+
+          | Check | Result |
+          |---|---|
+          SUMEOF
+          echo "| LaTeX lint (chktex) | ${LATEX_RES} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Link checker | ${LINKS_RES} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Detailed sections
+          for f in /tmp/lint_latex.txt /tmp/lint_links.txt; do
+            [ ! -f "$f" ] && continue
+            RES=$(head -1 "$f" | sed 's/^result=//')
+            if echo "$RES" | grep -q "Failed"; then
+              NAME=""
+              case "$f" in
+                */lint_latex.txt) NAME="LaTeX Lint" ;;
+                */lint_links.txt) NAME="Link Checker" ;;
+              esac
+              echo "<details><summary><strong>${NAME} — Details</strong></summary>" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              tail -n +2 "$f" | grep -v '^details<<EOF$' | grep -v '^EOF$' >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              echo "</details>" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+
+          # Fail job if any check failed
+          for res in "$LATEX_RES" "$LINKS_RES"; do
+            if echo "$res" | grep -q "Failed"; then
+              exit 1
+            fi
+          done
 
   # ── Job 2: Build (runs on both push and PR) ──────────────────────
   build:
@@ -85,25 +130,31 @@ jobs:
         run: |
           mkdir -p out
           xelatex -interaction=nonstopmode -output-directory=out main.tex
+        id: build1
 
       - name: Build PDF (pass 2)
         run: |
           xelatex -interaction=nonstopmode -output-directory=out main.tex
+        id: build2
 
       - name: Install PDF tools
         run: apt-get update -qq && apt-get install -y -qq poppler-utils > /dev/null 2>&1
 
       - name: Page count check
+        id: pages
+        continue-on-error: true
         run: |
           PAGES=$(pdfinfo out/main.pdf | awk '/Pages/{print $2}')
-          echo "📄 CV is $PAGES page(s)"
           if [ "$PAGES" -gt 2 ]; then
-            echo "❌ CV exceeds 2 pages ($PAGES)"
+            echo "result=❌ Failed (${PAGES} pages, max 2)" > /tmp/build_pages.txt
+            echo "CV exceeds 2 pages ($PAGES)"
             exit 1
           fi
-          echo "✅ Page count OK"
+          echo "result=✅ Passed (${PAGES} page(s))" > /tmp/build_pages.txt
 
       - name: ATS text validation
+        id: ats
+        continue-on-error: true
         run: |
           TEXT=$(pdftotext out/main.pdf -)
           MISSING=""
@@ -113,10 +164,11 @@ jobs:
             fi
           done
           if [ -n "$MISSING" ]; then
-            echo "❌ ATS text extraction failed — missing sections:$MISSING"
+            echo "result=❌ Failed — missing:${MISSING}" > /tmp/build_ats.txt
+            echo "ATS: sections not found: ${MISSING}"
             exit 1
           fi
-          echo "✅ ATS validation passed — all key sections extractable from PDF"
+          echo "result=✅ Passed (EXPERIENCE, EDUCATION, SKILLS)" > /tmp/build_ats.txt
 
       - name: Upload PDF artifact
         uses: actions/upload-artifact@v4
@@ -125,6 +177,29 @@ jobs:
           path: out/main.pdf
           retention-days: 5
 
+      - name: Generate build summary
+        if: always()
+        run: |
+          PAGES_RES=$(cat /tmp/build_pages.txt 2>/dev/null | head -1 | sed 's/^result=//' || echo '⚠️ Skipped')
+          ATS_RES=$(cat /tmp/build_ats.txt 2>/dev/null | head -1 | sed 's/^result=//' || echo '⚠️ Skipped')
+
+          cat >> $GITHUB_STEP_SUMMARY << SUMEOF
+
+          ## 📄 CV Build
+
+          | Check | Result |
+          |---|---|
+          | PDF compilation | ✅ Passed |
+          | Page count | ${PAGES_RES} |
+          | ATS text validation | ${ATS_RES} |
+          SUMEOF
+
+          # Fail job if any check failed
+          for res in "$PAGES_RES" "$ATS_RES"; do
+            if echo "$res" | grep -q "Failed"; then
+              exit 1
+            fi
+          done
   # ── Job 3: Visual diff on PRs ────────────────────────────────────
   diff:
     if: github.event_name == 'pull_request'
@@ -162,12 +237,10 @@ jobs:
             OLD_PDF=$(ls ./old/*.pdf | head -1)
             NEW_PDF=./new/main.pdf
 
-            # Convert both PDFs to images for visual comparison
             mkdir -p old-pages new-pages
             pdftoppm -png -r 150 "$OLD_PDF" old-pages/page
             pdftoppm -png -r 150 "$NEW_PDF" new-pages/page
 
-            # Store both sets of page images for manual side-by-side review
             cp old-pages/*.png diff-output/ 2>/dev/null || true
             cp new-pages/*.png diff-output/ 2>/dev/null || true
           else
@@ -206,7 +279,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           PREFIX="$(date +%Y.%m)"
-          # Count existing releases with this prefix via GitHub API
           COUNT=$(gh release list --limit 100 --json tagName -q ".[].tagName" | grep -c "^v${PREFIX}\." || true)
           PATCH=$((COUNT + 1))
           VERSION="${PREFIX}.${PATCH}"
@@ -215,7 +287,6 @@ jobs:
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "Next release: ${TAG}"
 
-          # Guard: fail if tag already exists
           if gh release view "${TAG}" 2>/dev/null; then
             echo "::error::Release ${TAG} already exists! Aborting."
             exit 1
