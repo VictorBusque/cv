@@ -1,3 +1,8 @@
+---
+name: task-management
+description: Create and manage task files under tasks/workitems/ to track work, blockers, and progress. Use when the user gives a multi-step task, asks to track progress, or wants to see the task board.
+---
+
 # Task Management Skill
 
 Create and manage task files under `tasks/workitems/` to track work, blockers, and progress.
@@ -28,14 +33,14 @@ tasks/
 
 Located in `.agents/skills/task-management/scripts/`. Always prefer scripts over manual file editing for structural operations.
 
-| Script | Purpose | When to use |
-|---|---|---|
-| `create-task.sh` | Create a new task file with next auto-ID | New task |
-| `add-comment.sh` | Append a log entry to a task | Any progress update, question, or decision |
-| `set-status.sh` | Transition status with validation | Starting, finishing, blocking, cancelling |
-| `set-field.sh` | Update any single frontmatter field | Changing priority, assignee, branch, depends_on |
-| `list-tasks.sh` | Terminal board view of all tasks | Quick status check in the terminal |
-| `build-board.sh` | Generate `tasks/index.html` Kanban board | After task changes, to update the visual board |
+| Script           | Purpose                                  | When to use                                     |
+| ---------------- | ---------------------------------------- | ----------------------------------------------- |
+| `create-task.sh` | Create a new task file with next auto-ID | New task                                        |
+| `add-comment.sh` | Append a log entry to a task             | Any progress update, question, or decision      |
+| `set-status.sh`  | Transition status with validation        | Starting, finishing, blocking, cancelling       |
+| `set-field.sh`   | Update any single frontmatter field      | Changing priority, assignee, branch, depends_on |
+| `list-tasks.sh`  | Terminal board view of all tasks         | Quick status check in the terminal              |
+| `build-board.sh` | Generate `tasks/index.html` Kanban board | After task changes, to update the visual board  |
 
 ### Script Details
 
@@ -54,6 +59,7 @@ Appends a timestamped log entry. Author defaults to `agent`. Víctor's entries u
 Validates the transition. Terminal states (`done`, `cancelled`) auto-set `finished_at`. Optional `--branch` and `--result`.
 
 Status lifecycle:
+
 ```
 open ──→ doing ──→ review ──→ done
   │         │
@@ -66,6 +72,7 @@ Terminal states cannot be left (`done`/`cancelled` are final).
 #### `set-field.sh <task-id> <field> <value>`
 
 Updates any frontmatter field. Always bumps `updated_at`. Examples:
+
 ```bash
 set-field.sh 3 priority high
 set-field.sh 3 assignee human
@@ -147,42 +154,43 @@ Why this task exists, what triggered it, links to discussions.
 ## Log
 
 ### 2026-05-26 08:00 — agent
+
 > Task created.
 ```
 
 ### Field Reference
 
-| Field | Type | Values | Description |
-|---|---|---|---|
-| `id` | int | auto | Matches filename number |
-| `title` | string | — | Short, imperative |
-| `description` | string | — | What and why |
-| `status` | enum | `open`, `doing`, `review`, `done`, `blocked`, `cancelled` | Current state |
-| `priority` | enum | `low`, `medium`, `high`, `critical` | Default: `medium` |
-| `assignee` | enum | `agent`, `human`, `both` | Who acts next |
-| `depends_on` | list[int] | e.g. `[1, 3]` | Blocking task IDs |
-| `created_at` | ISO 8601 | auto | Creation timestamp |
-| `updated_at` | ISO 8601 | auto | Last modification |
-| `finished_at` | ISO 8601/null | auto | Set on done/cancelled |
-| `branch` | string/null | — | Git branch if applicable |
-| `result` | string/null | — | Outcome: commit SHA, PR, summary |
+| Field         | Type          | Values                                                    | Description                      |
+| ------------- | ------------- | --------------------------------------------------------- | -------------------------------- |
+| `id`          | int           | auto                                                      | Matches filename number          |
+| `title`       | string        | —                                                         | Short, imperative                |
+| `description` | string        | —                                                         | What and why                     |
+| `status`      | enum          | `open`, `doing`, `review`, `done`, `blocked`, `cancelled` | Current state                    |
+| `priority`    | enum          | `low`, `medium`, `high`, `critical`                       | Default: `medium`                |
+| `assignee`    | enum          | `agent`, `human`, `both`                                  | Who acts next                    |
+| `depends_on`  | list[int]     | e.g. `[1, 3]`                                             | Blocking task IDs                |
+| `created_at`  | ISO 8601      | auto                                                      | Creation timestamp               |
+| `updated_at`  | ISO 8601      | auto                                                      | Last modification                |
+| `finished_at` | ISO 8601/null | auto                                                      | Set on done/cancelled            |
+| `branch`      | string/null   | —                                                         | Git branch if applicable         |
+| `result`      | string/null   | —                                                         | Outcome: commit SHA, PR, summary |
 
 ### Body Sections
 
-| Section | Purpose |
-|---|---|
+| Section     | Purpose                                                  |
+| ----------- | -------------------------------------------------------- |
 | **Context** | Background, motivation, links. Written once at creation. |
-| **Plan** | Checklist of steps. Check off with `[x]` as you go. |
-| **Log** | Append-only chronological journal. Never delete entries. |
+| **Plan**    | Checklist of steps. Check off with `[x]` as you go.      |
+| **Log**     | Append-only chronological journal. Never delete entries. |
 
 ## Aliases
 
-| User says | Action |
-|---|---|
-| "create a task", "track this", "new task" | `create-task.sh` |
-| "tasks", "show tasks", "what's pending", "status", "board" | `list-tasks.sh` |
-| "update task N", "mark doing", "log progress" | `set-status.sh` + `add-comment.sh` |
-| "close task N", "done with N", "finish N" | `set-status.sh N done --result "..."` |
-| "cancel task N", "drop N" | `set-status.sh N cancelled` |
-| "block task N", "need help with N" | `set-status.sh N blocked` + `set-field.sh N assignee human` |
-| "rebuild board", "update board", "refresh board" | `build-board.sh` |
+| User says                                                  | Action                                                      |
+| ---------------------------------------------------------- | ----------------------------------------------------------- |
+| "create a task", "track this", "new task"                  | `create-task.sh`                                            |
+| "tasks", "show tasks", "what's pending", "status", "board" | `list-tasks.sh`                                             |
+| "update task N", "mark doing", "log progress"              | `set-status.sh` + `add-comment.sh`                          |
+| "close task N", "done with N", "finish N"                  | `set-status.sh N done --result "..."`                       |
+| "cancel task N", "drop N"                                  | `set-status.sh N cancelled`                                 |
+| "block task N", "need help with N"                         | `set-status.sh N blocked` + `set-field.sh N assignee human` |
+| "rebuild board", "update board", "refresh board"           | `build-board.sh`                                            |
