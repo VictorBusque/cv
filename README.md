@@ -42,7 +42,7 @@ All commit messages must follow the format `<type>: <description>` (max 72 chars
 |---|---|
 | `cv` | CV content changes (bullets, roles, skills…) |
 | `ci` | CI/CD workflow changes |
-| `docs` | README, CHANGELOG, comments |
+| `docs` | README, comments |
 | `chore` | .gitignore, tooling, editor config |
 | `fix` | Fix typos, broken formatting |
 | `refactor` | Restructure without content change |
@@ -65,9 +65,8 @@ docs: updated README
 
 1. Builds the PDF in a TeX Live container
 2. Auto-versions it as `vYYYY.MM.N` (e.g. `v2026.05.1`)
-3. Generates a changelog from conventional commit messages since the last release
-4. Updates `CHANGELOG.md` and commits it
-5. Creates a GitHub Release with the versioned PDF and changelog attached
+3. Generates release notes from conventional commit messages since the last release
+4. Creates a GitHub Release with the versioned PDF and release notes attached
 
 Download the latest PDF from the [Releases page](../../releases).
 
@@ -77,10 +76,12 @@ Download the latest PDF from the [Releases page](../../releases).
 main.tex                      # Single-file LaTeX source (preamble + content)
 build.sh                      # Build & clean script
 Makefile                      # make build / clean / check / hooks
-CHANGELOG.md                  # Auto-updated by CI on each release
+LICENSE                       # MIT license
 .githooks/pre-commit          # Build verification before commits
 .githooks/commit-msg          # Conventional commit enforcement
 .github/workflows/build.yml   # CI: validate PRs, build & release on merge
+.github/PULL_REQUEST_TEMPLATE.md  # PR checklist template
+.github/dependabot.yml        # Automated GitHub Actions dependency updates
 .editorconfig                 # Editor consistency rules
 AGENTS.md                     # AI agent instructions for editing this repo
 out/                          # Build artifacts (gitignored)

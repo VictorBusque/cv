@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths-ignore:
-      - "CHANGELOG.md"
+      - "LICENSE"
   pull_request:
     branches: [main]
 
@@ -136,7 +136,7 @@ jobs:
             exit 1
           fi
 
-      - name: Generate changelog
+      - name: Generate release notes
         id: changelog
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -153,10 +153,10 @@ jobs:
           fi
 
           {
-            echo "notes<<CHANGELOG_EOF"
+            echo "notes<<RELEASE_EOF"
             echo "$NOTES"
             echo ""
-            echo "CHANGELOG_EOF"
+            echo "RELEASE_EOF"
           } >> "$GITHUB_OUTPUT"
 
       - name: Rename PDF with version

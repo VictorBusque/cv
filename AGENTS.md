@@ -11,7 +11,6 @@ This repo contains the CV/résumé of **Víctor Busqué Somacarrera** as a singl
 - **Pre-commit hook:** `.githooks/pre-commit` — runs build check when `main.tex` is modified.
 - **Commit-msg hook:** `.githooks/commit-msg` — enforces conventional commit format (`<type>: <description>`).
 - **Hooks activation:** `make hooks` or `git config core.hooksPath .githooks`.
-- **CHANGELOG.md:** auto-updated by CI on each release to `main`.
 - **Repo:** `git@github.com:VictorBusque/cv.git`
 
 ## Structure Conventions
@@ -85,9 +84,8 @@ If `xelatex` fails, check that `texlive-fonts-extra` and `fontawesome5` are inst
 2. Computes the next **auto-version** tag in `YYYY.MM.N` format (e.g. `2026.05.1`, `2026.05.2`).
    - `YYYY.MM` = year and month of the commit date.
    - `N` = patch number, auto-incremented by counting existing tags with the same prefix.
-3. Generates changelog from conventional commit messages since last tag.
-4. Updates `CHANGELOG.md` and auto-commits it.
-5. Creates a **GitHub Release** tagged `v<version>` with the versioned PDF (`Victor_Busque_CV_<version>.pdf`) and changelog attached.
+3. Generates release notes from conventional commit messages since last tag.
+4. Creates a **GitHub Release** tagged `v<version>` with the versioned PDF (`Victor_Busque_CV_<version>.pdf`) and release notes attached.
 
 Releases are listed at: `https://github.com/VictorBusque/cv/releases`
 
