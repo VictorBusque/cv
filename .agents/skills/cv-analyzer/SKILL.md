@@ -20,6 +20,7 @@ Rate each category **0–10**. The overall score is a weighted average (weights 
 **What recruiters want:** Bullets with measurable outcomes — dollars, percentages, user counts, time savings. The #1 predictor of interview callbacks.
 
 **Check for:**
+
 - [ ] Each bullet point contains at least one number or metric
 - [ ] Metrics are specific (not "improved performance" but "reduced latency by 40%")
 - [ ] Revenue/cost impact is stated where applicable ($ figures)
@@ -29,6 +30,7 @@ Rate each category **0–10**. The overall score is a weighted average (weights 
 - [ ] Strong verbs are used ("led", "designed", "built", "scaled", "delivered", "owned", "pioneered", "achieved", "reduced", "increased", "launched")
 
 **Common issues to flag:**
+
 - Bullets without any numbers
 - Vague impact ("improved efficiency" without saying how much)
 - Responsibility lists instead of achievement statements
@@ -39,6 +41,7 @@ Rate each category **0–10**. The overall score is a weighted average (weights 
 **What ATS parsers need:** Clean text extraction with standard section headings, simple formatting, and keyword density.
 
 **Check for:**
+
 - [ ] Section headings use standard names (Experience, Skills, Education, Projects)
 - [ ] No tables, columns, text boxes, or embedded graphics that confuse parsers
 - [ ] Skills section lists both acronyms AND full terms (e.g., "Natural Language Processing (NLP)")
@@ -50,6 +53,7 @@ Rate each category **0–10**. The overall score is a weighted average (weights 
 - [ ] No special characters that could break parsing (strange unicode, emojis)
 
 **Common issues to flag:**
+
 - Non-standard section names that parsers might ignore
 - Skills listed only in the Skills section (not reinforced in bullets)
 - Missing full-term equivalents for acronyms
@@ -60,6 +64,7 @@ Rate each category **0–10**. The overall score is a weighted average (weights 
 **What makes a complete, attractive resume:**
 
 **Check for:**
+
 - [ ] Professional Summary is present, concise (2–4 sentences), and role-aligned
 - [ ] Experience section is reverse-chronological with clear progression
 - [ ] Each role has 3–10 bullets (more for recent roles, fewer for older ones)
@@ -71,6 +76,7 @@ Rate each category **0–10**. The overall score is a weighted average (weights 
 - [ ] No irrelevant or outdated information
 
 **Common issues to flag:**
+
 - Professional Summary is too long or too generic
 - Older roles have as many bullets as recent ones (should taper)
 - Missing tech stack for a role
@@ -81,6 +87,7 @@ Rate each category **0–10**. The overall score is a weighted average (weights 
 **How recruiters find candidates:** Boolean search across LinkedIn and ATS databases using exact skill keywords and job titles.
 
 **Check for:**
+
 - [ ] Key technologies appear as exact strings (e.g., "Python", "FastAPI", "AWS", "Kubernetes")
 - [ ] Industry terms are present for the target domain (AI/ML: "LLM", "RAG", "MCP", "Agent", "Fine-tuning", "Embeddings")
 - [ ] Job-level keywords match target roles ("Tech Lead", "AI Engineer", "NLP Engineer", "Senior")
@@ -89,6 +96,7 @@ Rate each category **0–10**. The overall score is a weighted average (weights 
 - [ ] The resume would surface in a recruiter Boolean search like: `(AI Engineer OR NLP Engineer) AND (Python OR FastAPI) AND (AWS OR Kubernetes) AND (LLM OR RAG)`
 
 **Common issues to flag:**
+
 - Important keywords missing that peers in the same role would have
 - Only one way to refer to a technology (missing synonyms/abbreviations)
 - Skills section doesn't match what's described in experience bullets
@@ -98,6 +106,7 @@ Rate each category **0–10**. The overall score is a weighted average (weights 
 **What human eyes need:** Clean scannability in 6–7 seconds of recruiter attention.
 
 **Check for:**
+
 - [ ] Resume length is appropriate for experience level (1 page for <10 yrs, 1–2 pages for 10+)
 - [ ] Bold text is used strategically for key metrics and labels (not overused)
 - [ ] White space is sufficient — not too dense, not too sparse
@@ -107,6 +116,7 @@ Rate each category **0–10**. The overall score is a weighted average (weights 
 - [ ] No orphan/widow lines (single lines at top/bottom of a page)
 
 **Common issues to flag:**
+
 - Page breaks in awkward places
 - Too many bold items (diminishes impact)
 - Inconsistent date formats between sections
@@ -117,6 +127,7 @@ Rate each category **0–10**. The overall score is a weighted average (weights 
 **What tells a coherent story:** Clear progression, specialization, and increasing scope.
 
 **Check for:**
+
 - [ ] Career progression is visible (title advancement, scope increase)
 - [ ] There's a clear thematic thread (AI/NLP specialization is consistent)
 - [ ] Each role builds on the previous one (not random jumps)
@@ -125,6 +136,7 @@ Rate each category **0–10**. The overall score is a weighted average (weights 
 - [ ] The Professional Summary accurately reflects the overall narrative
 
 **Common issues to flag:**
+
 - Unclear why someone moved between companies
 - Recent experience doesn't match stated career direction
 - Leadership bullets are mixed with IC bullets without clear role separation
@@ -197,6 +209,7 @@ Always scan for these instant-reject signals:
 ## After Analysis
 
 After presenting the scorecard:
+
 1. Ask if the user wants to fix any issues
 2. If yes, use the `section-editor` skill patterns to apply targeted edits
 3. Rebuild and re-score after changes:

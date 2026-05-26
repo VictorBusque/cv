@@ -48,7 +48,7 @@
 
 % Custom commands
 \newcommand{\resumeItem}[1]{
-  \item\small{
+  \item{\small
     {#1 \vspace{-1pt}}
   }
 }
@@ -101,8 +101,6 @@ Engineer with ~8 years turning NLP and generative AI systems into production. De
         \resumeItem{\textbf{Operations Automation:} Designed and shipped LLM-based review agents, document classifiers, and decision pipelines for Compliance, Chargebacks, Finance, and Customer Success, generating \textbf{\$2M+ in annual operational savings}.}
         \resumeItem{\textbf{Agent SDLC:} Designed and technically owned a planning agent that receives RFCs and PADs and produces a full DAG of implementation tasks with dependencies and acceptance criteria. Similarly owned a test planning agent that generates test plans for autonomous execution. Contributed to the design of an autonomous code developer agent. All agents built on the Claude Agents SDK.}
         \resumeItem{\textbf{Incident Intelligence:} End-to-end ownership (proposed, designed, built, deployed, and maintained) of the Platform Investigation Agent (built on the Claude Agents SDK). It autonomously investigates and diagnoses issues across 7+ data sources with \textbf{79\% root cause analysis precision} across \textbf{1,150+ investigations} from \textbf{100+ unique users} each month (troubleshooting, incidents, and ad-hoc requests). Root causes identified in under 5 min (P90), targeting 50\% MTTR reduction for P2/P3 incidents.}
-    \resumeItemListEnd
-    \resumeItemListStart
         \resumeItem{\textbf{Technical Leadership:} Authored \textbf{10+ architectural RFCs} on AI infrastructure, agent systems, and event-driven architectures. Tech Lead and mentor for 2 squads (AI Core and AI Automation) totalling \textbf{10 engineers}. Built the AI engineering interview framework (Senior/Lead rubrics); interviewed \textbf{70+ candidates}, hired \textbf{15+ engineers}. Run internal AI support channels serving 400+ developers.}
     \resumeItemListEnd
 
@@ -112,7 +110,7 @@ Engineer with ~8 years turning NLP and generative AI systems into production. De
         \resumeItem{\textbf{dLocal Assistant:} Built a multi-agent AI system deployed as an enterprise Slack bot, serving as the primary AI assistant for the entire company. Achieved \textbf{600 MAU} (\textbf{100,000+ messages/month}) across the org. Capabilities included document reading (multi-format), code interpretation, internet search, file uploads, and image analysis. Beta release Mar. 2024, GA rollout Jun. 2024.}
         \resumeItem{First AI Engineer hired into AI R\&D. Delivered dLocal's first production LLM agents for Compliance AML analysis, Chargeback automation, and document processing (scraping + multi-format parsing + LLM classification). Established engineering patterns (FastAPI + LangChain + event-driven workflows) still used across the AI org.}
     \resumeItemListEnd
-    \small{\textbf{Stack:} Python, FastAPI, AWS (EKS, Bedrock, AgentCore, S3, SQS, SNS, CloudFormation), LiteLLM, LangChain, Anthropic (Claude, Opus/Sonnet), Claude Agents SDK, OpenAI (GPT models / API), Gemini, Vector DBs, Docker, Kubernetes.}
+    {\small \textbf{Stack:} Python, FastAPI, AWS (EKS, Bedrock, AgentCore, S3, SQS, SNS, CloudFormation), LiteLLM, LangChain, Anthropic (Claude, Opus/Sonnet), Claude Agents SDK, OpenAI (GPT models / API), Gemini, Vector DBs, Docker, Kubernetes.}
 
     % --- ROLLIO ---
     \vspace{10pt}
@@ -122,7 +120,7 @@ Engineer with ~8 years turning NLP and generative AI systems into production. De
     \vspace{2pt}
     \textit{AI Tech Lead} \hfill \small Mar. 2023 -- Dec. 2023
     \resumeItemListStart
-        \resumeItem{Led the AI team's transition to an AI-first product architecture. Improved response times from \textbf{$\sim$1s to <200ms} while \textbf{reducing AI costs by 3x}.}
+        \resumeItem{Led the AI team's transition to an AI-first product architecture. Improved response times from \textbf{$\approx$ 1s to <200ms} while \textbf{reducing AI costs by 3x}.}
         \resumeItem{Redesigned the NLU pipeline to single-model inference with per-customer configuration, cutting client onboarding time from \textbf{1–2 weeks to 2–3 days}.}
         \resumeItem{Led a technical partnership delivering \textbf{RAG}-powered natural-language-to-PQL code generation, showcased at \textbf{Celonis World Tour 2023}.}
     \resumeItemListEnd
@@ -132,7 +130,7 @@ Engineer with ~8 years turning NLP and generative AI systems into production. De
     \resumeItemListStart
         \resumeItem{Drove the product's shift from rule-based to LLM-driven NLU. Designed \textbf{Speech-to-Text (STT)} and context-aware spell-checking. Cut code complexity and technical debt, speeding up feature delivery.}
     \resumeItemListEnd
-    \small{\textbf{Stack:} Python, FastAPI, Hugging Face, LangChain, Docker, Kubernetes, AWS.}
+    {\small \textbf{Stack:} Python, FastAPI, Hugging Face, LangChain, Docker, Kubernetes, AWS.}
 
     % --- RAONA ---
     \vspace{10pt}
@@ -153,7 +151,7 @@ Engineer with ~8 years turning NLP and generative AI systems into production. De
         \resumeItem{Delivered end-to-end ML systems for enterprise clients: fine-tuned transformer models (BERT) for content moderation and built NER-based information extraction pipelines.}
         \resumeItem{Gave a public webinar on GPT-3 applications (Sep. 2020), months after its release — among the first in the Spanish market on LLM use cases.}
     \resumeItemListEnd
-    \small{\textbf{Stack:} Python, Hugging Face, Azure AI, Docker.}
+    {\small \textbf{Stack:} Python, Hugging Face, Azure AI, Docker.}
 
   \resumeSubHeadingListEnd
 
@@ -176,7 +174,7 @@ Engineer with ~8 years turning NLP and generative AI systems into production. De
 %-----------SKILLS-----------
 \section{SKILLS}
  \begin{itemize}[leftmargin=0in, label={}]
-    \small{\item{
+    {\small\item{
      \textbf{AI \& LLMs:} Generative AI (LLMs), RAG (Hybrid Search), MCP (Model Context Protocol), Multi-Agent Systems, LangChain, Prompt Engineering, Vector DBs (Embeddings), OpenAI (GPT models / API), Anthropic (Claude, Opus/Sonnet), Claude Agents SDK, Google (Gemini), LiteLLM, Hugging Face. \\
      \textbf{Engineering:} Python (Expert, 8+ yrs), FastAPI. \\
      \textbf{Cloud \& Infrastructure:} AWS (EKS, Bedrock, AgentCore, S3, SQS, SNS, CloudFormation), Azure AI, Docker, Kubernetes.

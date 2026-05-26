@@ -29,16 +29,19 @@ The CV has these sections in order:
 **Where:** Inside any `\resumeItemListStart ... \resumeItemListEnd` block.
 
 **Template:**
+
 ```latex
 \resumeItem{<content>}
 ```
 
 **Rules:**
+
 - Bold key phrases/metrics: `\textbf{300+}` or `\textbf{AI Platform:}`
 - Keep concise and impact-focused: metric → action → context
 - Place after the last `\resumeItem` in the target block, before `\resumeItemListEnd`
 
 **Example:**
+
 ```latex
 \resumeItem{\textbf{Cost Optimization:} Reduced LLM inference costs by \textbf{40\%} through intelligent model routing and prompt caching.}
 ```
@@ -48,6 +51,7 @@ The CV has these sections in order:
 **Where:** Inside a company block, after the last role's `\resumeItemListEnd` and before the Stack line.
 
 **Template:**
+
 ```latex
     \vspace{2pt}
     \textit{<Title>} \hfill \small <Start Month>. <Start Year> -- <End Month>. <End Year>
@@ -57,6 +61,7 @@ The CV has these sections in order:
 ```
 
 **Rules:**
+
 - Add `\vspace{2pt}` before the role line
 - Dates use three-letter month abbreviations: `Jan.`, `Feb.`, `Mar.`, `Apr.`, `May`, `Jun.`, `Jul.`, `Aug.`, `Sep.`, `Oct.`, `Nov.`, `Dec.`
 - Use `Present` for current roles
@@ -67,6 +72,7 @@ The CV has these sections in order:
 **Where:** Inside the EXPERIENCE section's `\resumeSubHeadingListStart ... \resumeSubHeadingListEnd`, in reverse-chronological order (newest first).
 
 **Template:**
+
 ```latex
     % --- <COMPANY NAME> ---
     \item
@@ -81,6 +87,7 @@ The CV has these sections in order:
 ```
 
 **Rules:**
+
 - Add `\vspace{10pt}` between companies
 - Comment with `% --- COMPANY ---`
 - Newest company first
@@ -91,6 +98,7 @@ The CV has these sections in order:
 **Where:** Inside the PROJECTS section's `\resumeSubHeadingListStart ... \resumeSubHeadingListEnd`.
 
 **Template:**
+
 ```latex
       \resumeProjectHeading
         {\textbf{\href{<URL>}{<Name>}} $|$ \emph{<type>}}{<Month>. <Year> -- <End>}
@@ -100,6 +108,7 @@ The CV has these sections in order:
 ```
 
 **Rules:**
+
 - Place in reverse-chronological order (newest first)
 - Use `\emph{Personal project}` for personal projects, `\emph{Open Source}` for OSS, etc.
 
@@ -118,11 +127,13 @@ To add a skill, append it to the appropriate group's comma-separated list. To ad
 Two parts to edit:
 
 1. **Tagline** (the `\textit{...}` centered line):
+
 ```latex
 \centering\textit{<tagline>}\\[4pt]
 ```
 
 2. **Body paragraph** (the paragraph after `\raggedright`):
+
 ```latex
 AI Technical Leader with 8+ years...
 ```

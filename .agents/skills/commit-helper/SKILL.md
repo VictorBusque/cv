@@ -13,13 +13,13 @@ This repo enforces `<type>: <description>` (max 72 chars on the first line).
 
 ### Valid Types
 
-| Type | When to use |
-|------|-------------|
-| `cv` | Changes to CV content (bullet points, summary, skills, etc.) |
-| `ci` | Changes to CI/CD workflows, build scripts |
-| `docs` | Changes to README, AGENTS.md, documentation |
-| `chore` | Maintenance tasks (gitignore, dependencies, tooling) |
-| `fix` | Bug fixes (broken LaTeX, build errors) |
+| Type       | When to use                                                        |
+| ---------- | ------------------------------------------------------------------ |
+| `cv`       | Changes to CV content (bullet points, summary, skills, etc.)       |
+| `ci`       | Changes to CI/CD workflows, build scripts                          |
+| `docs`     | Changes to README, AGENTS.md, documentation                        |
+| `chore`    | Maintenance tasks (gitignore, dependencies, tooling)               |
+| `fix`      | Bug fixes (broken LaTeX, build errors)                             |
 | `refactor` | Restructuring without changing content (formatting, macro changes) |
 
 ### Examples
@@ -43,6 +43,7 @@ git diff main.tex
 ```
 
 If nothing is staged, also check:
+
 ```bash
 git status
 ```
@@ -50,6 +51,7 @@ git status
 ### 2. Determine Type
 
 Map the changes to the correct type:
+
 - Changes inside `\section{EXPERIENCE}`, `\section{PROJECTS}`, `\section{SKILLS}`, `\section{EDUCATION}`, or `\section{PROFESSIONAL SUMMARY}` → `cv`
 - Changes to `.github/workflows/`, `build.sh`, `Makefile` → `ci`
 - Changes to `.md` files → `docs`
@@ -60,14 +62,16 @@ Map the changes to the correct type:
 ### 3. Craft the Message
 
 Rules:
+
 - Use the imperative mood ("add" not "added", "update" not "updated")
 - Be specific about what changed and where
 - If multiple unrelated changes, consider suggesting the user split into separate commits
 - Max 72 characters on the first line
 - If a longer explanation is needed, use a multi-line commit:
+
   ```
   cv: restructure dLocal experience section
-  
+
   - Split tech lead role into two bullet groups
   - Add incident intelligence achievement
   - Reorder bullets for impact
@@ -84,6 +88,7 @@ git commit -m "<message>"
 ```
 
 If the user wants a multi-line commit message, use:
+
 ```bash
 git commit -m "type: short description" -m "First detail line" -m "Second detail line"
 ```
@@ -91,10 +96,12 @@ git commit -m "type: short description" -m "First detail line" -m "Second detail
 ### 5. Handle Hook Failures
 
 The pre-commit hook builds `main.tex` if it changed. If the build fails:
+
 - Report the xelatex errors
 - Suggest fixes
 - Do NOT bypass hooks
 
 The commit-msg hook validates the format. If it rejects the message:
+
 - Adjust the message to match `<type>: <description>`
 - Ensure it's ≤ 72 characters
