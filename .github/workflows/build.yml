@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths-ignore:
-      - 'CHANGELOG.md'
+      - "CHANGELOG.md"
   pull_request:
     branches: [main]
 
@@ -162,41 +162,6 @@ jobs:
       - name: Rename PDF with version
         run: |
           cp out/main.pdf "Victor_Busque_CV_${{ steps.version.outputs.version }}.pdf"
-
-      - name: Update CHANGELOG.md
-        run: |
-          DATE=$(date +%Y-%m-%d)
-          VERSION="${{ steps.version.outputs.version }}"
-          NOTES="${{ steps.changelog.outputs.notes }}"
-          PREV="${{ steps.changelog.outputs.prev_tag }}"
-
-          # Create or prepend to CHANGELOG.md
-          ENTRY="## v${VERSION} (${DATE})"$'\n\n'"${NOTES}"
-
-          if [ -f CHANGELOG.md ]; then
-            # Prepend new entry after the header
-            {
-              echo "# Changelog"
-              echo ""
-              echo "$ENTRY"
-              echo ""
-              # Remove old header and keep the rest
-              sed '1,/^# Changelog/d' CHANGELOG.md | sed '1,/^$/d'
-            } > CHANGELOG.md.new
-            mv CHANGELOG.md.new CHANGELOG.md
-          else
-            {
-              echo "# Changelog"
-              echo ""
-              echo "$ENTRY"
-            } > CHANGELOG.md
-          fi
-
-      - name: Commit CHANGELOG.md
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "chore: update CHANGELOG.md for v${{ steps.version.outputs.version }} [skip ci]"
-          file_pattern: CHANGELOG.md
 
       - name: Create GitHub Release
         env:
