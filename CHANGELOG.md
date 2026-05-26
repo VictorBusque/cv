@@ -1,7 +1,7 @@
 # Changelog
 
-## v2026.05.3 (2026-05-26)
+## v2026.05.4 (2026-05-26)
 
-- cv: Update older experiences
+- cv: Revise professional summary and experience details for clarity and impact
 
 
