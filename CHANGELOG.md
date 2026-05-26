@@ -2,6 +2,8 @@
 
 ## v2026.05.1 (2026-05-26)
 
+- ci: use git ls-remote for reliable tag counting
+- chore: update CHANGELOG.md for v2026.05.1 [skip ci]
 - ci: fix release versioning loop and tag overwrite
 - chore: update CHANGELOG.md for v2026.05.1
 - cv: fix LaTeX casing in file header comment
