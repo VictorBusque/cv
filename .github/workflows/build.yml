@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths-ignore:
       - "LICENSE"
+      - ".wordlist"
+      - ".gitignore"
   pull_request:
     branches: [main]
 
@@ -12,7 +14,62 @@ permissions:
   contents: write
 
 jobs:
-  # ── Job 1: Build (runs on both push and PR) ──────────────────────
+  # ── Job 1: Lint (parallel, lightweight) ──────────────────────────
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install lint tools
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq hunspell hunspell-en-us chktex > /dev/null 2>&1
+
+      - name: Spell check
+        run: |
+          UNKNOWN=$(hunspell -l -d en_US -t main.tex | sort -u | grep -vxFf .wordlist || true)
+          if [ -n "$UNKNOWN" ]; then
+            echo "❌ Unknown words found:"
+            echo "$UNKNOWN"
+            exit 1
+          fi
+          echo "✅ Spell check passed"
+
+      - name: LaTeX lint (chktex)
+        run: |
+          # Run chktex, suppress common false positives from custom resume macros
+          # -n1  (wrong dash length)
+          # -n6  (missing italic correction)
+          # -n13 (intersentence spacing)
+          # -n15 (command terminated with space)
+          # -n36 (parens spacing)
+          # -n44 (section label missing)
+          OUTPUT=$(chktex -q -n1 -n6 -n13 -n15 -n36 -n44 main.tex 2>/dev/null || true)
+          if [ -n "$OUTPUT" ]; then
+            echo "❌ LaTeX lint issues:"
+            echo "$OUTPUT"
+            exit 1
+          fi
+          echo "✅ LaTeX lint passed"
+
+      - name: Link checker
+        run: |
+          FAIL=0
+          while IFS= read -r url; do
+            STATUS=$(curl -sI -o /dev/null -w "%{http_code}" -L --max-time 10 "$url" 2>/dev/null || echo "000")
+            if [ "$STATUS" -ge 400 ] || [ "$STATUS" = "000" ]; then
+              echo "❌ $url → HTTP $STATUS"
+              FAIL=1
+            else
+              echo "✅ $url → HTTP $STATUS"
+            fi
+          done < <(grep -oE 'https?://[^} )\\]+' main.tex | sort -u)
+          if [ "$FAIL" -eq 1 ]; then
+            exit 1
+          fi
+          echo "✅ All links reachable"
+
+  # ── Job 2: Build (runs on both push and PR) ──────────────────────
   build:
     runs-on: ubuntu-latest
     container:
@@ -33,6 +90,34 @@ jobs:
         run: |
           xelatex -interaction=nonstopmode -output-directory=out main.tex
 
+      - name: Install PDF tools
+        run: apt-get update -qq && apt-get install -y -qq poppler-utils > /dev/null 2>&1
+
+      - name: Page count check
+        run: |
+          PAGES=$(pdfinfo out/main.pdf | awk '/Pages/{print $2}')
+          echo "📄 CV is $PAGES page(s)"
+          if [ "$PAGES" -gt 2 ]; then
+            echo "❌ CV exceeds 2 pages ($PAGES)"
+            exit 1
+          fi
+          echo "✅ Page count OK"
+
+      - name: ATS text validation
+        run: |
+          TEXT=$(pdftotext out/main.pdf -)
+          MISSING=""
+          for SECTION in "EXPERIENCE" "EDUCATION" "SKILLS"; do
+            if ! echo "$TEXT" | grep -qi "$SECTION"; then
+              MISSING="$MISSING $SECTION"
+            fi
+          done
+          if [ -n "$MISSING" ]; then
+            echo "❌ ATS text extraction failed — missing sections:$MISSING"
+            exit 1
+          fi
+          echo "✅ ATS validation passed — all key sections extractable from PDF"
+
       - name: Upload PDF artifact
         uses: actions/upload-artifact@v4
         with:
@@ -40,10 +125,10 @@ jobs:
           path: out/main.pdf
           retention-days: 5
 
-  # ── Job 2: Visual diff on PRs ────────────────────────────────────
+  # ── Job 3: Visual diff on PRs ────────────────────────────────────
   diff:
     if: github.event_name == 'pull_request'
-    needs: build
+    needs: [build, lint]
     runs-on: ubuntu-latest
 
     steps:
@@ -97,10 +182,10 @@ jobs:
           path: diff-output/
           retention-days: 14
 
-  # ── Job 3: Release (only on push to main) ────────────────────────
+  # ── Job 4: Release (only on push to main) ────────────────────────
   release:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: build
+    needs: [build, lint]
     runs-on: ubuntu-latest
 
     steps:
