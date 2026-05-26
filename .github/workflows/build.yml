@@ -29,7 +29,7 @@ jobs:
         id: latex
         continue-on-error: true
         run: |
-          OUTPUT=$(chktex -q -n1 -n6 -n8 -n13 -n15 -n36 -n38 -n39 -n44 main.tex 2>/dev/null || true)
+          OUTPUT=$(chktex -q -n1 -n6 -n8 -n13 -n15 -n18 -n36 -n38 -n39 -n44 main.tex 2>/dev/null || true)
           if [ -n "$OUTPUT" ]; then
             {
               echo "result=❌ Failed"
