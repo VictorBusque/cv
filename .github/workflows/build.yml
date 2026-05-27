@@ -216,8 +216,9 @@ jobs:
         run: |
           HASH=$(sha256sum out/main.pdf | awk '{print $1}')
           echo "hash=${HASH}" >> "$GITHUB_OUTPUT"
-          echo "${HASH:0:16}" > /tmp/build_hash.txt
-          echo "PDF fingerprint: ${HASH:0:16}..."
+          SHORT=$(echo "$HASH" | cut -c1-16)
+          echo "$SHORT" > /tmp/build_hash.txt
+          echo "PDF fingerprint: ${SHORT}..."
 
       - name: Upload PDF artifact
         uses: actions/upload-artifact@v7
