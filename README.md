@@ -12,12 +12,17 @@ The LaTeX source for my CV/résumé, compiled to PDF via XeLaTeX.
 make              # build PDF (or ./build.sh)
 make clean        # remove artifacts
 make check        # build & verify
+make convert      # build HTML + Markdown (requires pandoc)
+make html         # HTML only
+make md           # Markdown only
 make hooks        # activate git hooks
 ```
 
 **Requirements:** `xelatex`, `texlive-fonts-extra`, `fontawesome5`.
 
-The compiled PDF lands at `out/main.pdf`.
+For HTML/Markdown export: `pandoc` ([install](https://pandoc.org/installing.html)).
+
+The compiled PDF lands at `out/main.pdf`. HTML and Markdown go to `out/main.html` and `out/main.md`.
 
 ## Git Hooks
 
@@ -59,23 +64,40 @@ docs: updated README
 ### On every Pull Request
 
 1. Builds the PDF to verify `main.tex` compiles
-2. Downloads the latest release PDF and generates a **visual diff** (page images) uploaded as an artifact — review before merging
+2. Converts to HTML and Markdown (if pandoc available)
+3. Downloads the latest release PDF and generates a **visual diff** (page images) uploaded as an artifact — review before merging
 
 ### On merge to `main`
 
 1. Builds the PDF in a TeX Live container
-2. Auto-versions it as `vYYYY.MM.N` (e.g. `v2026.05.1`)
-3. Generates release notes from conventional commit messages since the last release
-4. Creates a GitHub Release with the versioned PDF and release notes attached
+2. Converts to HTML and Markdown (if pandoc available)
+3. Auto-versions it as `vYYYY.MM.N` (e.g. `v2026.05.1`)
+4. Generates release notes from conventional commit messages since the last release
+5. Creates a GitHub Release with the versioned PDF, `llms.txt` (Markdown), and release notes attached
 
 Download the latest PDF from the [Releases page](../../releases).
+
+### llms.txt
+
+Each release includes `llms.txt` — a Markdown version of the CV optimized for LLM consumption. The latest version is always at:
+
+```
+https://github.com/VictorBusque/cv/releases/latest/download/llms.txt
+```
+
+To serve it from your domain (e.g. `victorbusque.com/llms.txt`), set up a redirect:
+
+- **Cloudflare:** Page Rule → URL Match `victorbusque.com/llms.txt` → Forwarding URL (301) to the GitHub URL
+- **nginx:** `location = /llms.txt { return 301 https://github.com/VictorBusque/cv/releases/latest/download/llms.txt; }`
+- **Netlify:** `_redirects` file → `/llms.txt https://github.com/VictorBusque/cv/releases/latest/download/llms.txt 301`
 
 ## Structure
 
 ```
 main.tex                      # Single-file LaTeX source (preamble + content)
-build.sh                      # Build & clean script
-Makefile                      # make build / clean / check / hooks
+build.sh                      # Build & clean script (supports: build, clean, convert)
+convert.sh                    # LaTeX → HTML/Markdown converter (requires pandoc)
+Makefile                      # make build / clean / check / convert / md / html / hooks
 LICENSE                       # MIT license
 .githooks/pre-commit          # Build verification before commits
 .githooks/commit-msg          # Conventional commit enforcement
@@ -84,7 +106,7 @@ LICENSE                       # MIT license
 .github/dependabot.yml        # Automated GitHub Actions dependency updates
 .editorconfig                 # Editor consistency rules
 AGENTS.md                     # AI agent instructions for editing this repo
-out/                          # Build artifacts (gitignored)
+out/                          # Build artifacts (gitignored): PDF, HTML, Markdown
 ```
 
 ## Editing

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build the CV PDF from main.tex using XeLaTeX
-# Usage: ./build.sh [clean]
+# Usage: ./build.sh [clean|convert]
 set -euo pipefail
 
 OUTDIR="out"
@@ -22,3 +22,8 @@ echo "📄 Building $TEX -> $OUTDIR/main.pdf (pass 2)..."
 xelatex -interaction=nonstopmode -output-directory="$OUTDIR" "$TEX" > /dev/null
 
 echo "✅ Done: $OUTDIR/main.pdf ($(du -h "$OUTDIR/main.pdf" | cut -f1))"
+
+if [ "${1:-}" = "convert" ]; then
+    echo ""
+    ./convert.sh all
+fi

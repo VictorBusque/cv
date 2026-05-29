@@ -220,11 +220,33 @@ jobs:
           echo "$SHORT" > /tmp/build_hash.txt
           echo "PDF fingerprint: ${SHORT}..."
 
+      - name: Convert to HTML & Markdown
+        id: convert
+        continue-on-error: true
+        run: |
+          chmod +x convert.sh
+          ./convert.sh all
+          echo "✅ HTML and Markdown generated"
+
       - name: Upload PDF artifact
         uses: actions/upload-artifact@v7
         with:
           name: cv-pdf
           path: out/main.pdf
+          retention-days: 5
+
+      - name: Upload HTML artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: cv-html
+          path: out/main.html
+          retention-days: 5
+
+      - name: Upload Markdown artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: cv-md
+          path: out/main.md
           retention-days: 5
 
       - name: Generate build summary
@@ -234,6 +256,12 @@ jobs:
           ATS_RES=$(cat /tmp/build_ats.txt 2>/dev/null | head -1 | sed 's/^result=//' || echo '⚠️ Skipped')
           PDF_SIZE=$(du -h out/main.pdf 2>/dev/null | awk '{print $1}' || echo 'unknown')
           PDF_HASH=$(cat /tmp/build_hash.txt 2>/dev/null || echo 'unknown')
+          HTML_SIZE=$(du -h out/main.html 2>/dev/null | awk '{print $1}' || echo 'skipped')
+          MD_SIZE=$(du -h out/main.md 2>/dev/null | awk '{print $1}' || echo 'skipped')
+          CONVERT_RES="✅ Passed"
+          if [ ! -f out/main.html ] || [ ! -f out/main.md ]; then
+            CONVERT_RES="⚠️ Skipped (pandoc not available)"
+          fi
 
           # Overall verdict
           BUILD_PASS=true
@@ -253,14 +281,17 @@ jobs:
           echo "| PDF compilation | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
           echo "| Page count (max 2) | ${PAGES_RES} |" >> $GITHUB_STEP_SUMMARY
           echo "| ATS text validation | ${ATS_RES} |" >> $GITHUB_STEP_SUMMARY
+          echo "| HTML/MD conversion | ${CONVERT_RES} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          echo "<details><summary><strong>PDF metadata</strong></summary>" >> $GITHUB_STEP_SUMMARY
+          echo "<details><summary><strong>Output files</strong></summary>" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|:---------|:------|" >> $GITHUB_STEP_SUMMARY
-          echo "| File size | \`${PDF_SIZE}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| SHA-256 | \`${PDF_HASH}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| File | Size |" >> $GITHUB_STEP_SUMMARY
+          echo "|:-----|:-----|" >> $GITHUB_STEP_SUMMARY
+          echo "| \`main.pdf\` | \`${PDF_SIZE}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| \`main.html\` | \`${HTML_SIZE}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| \`main.md\` | \`${MD_SIZE}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| PDF SHA-256 | \`${PDF_HASH}\` |" >> $GITHUB_STEP_SUMMARY
           echo "</details>" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
@@ -478,6 +509,7 @@ jobs:
         if: steps.content_check.outputs.changed != 'false'
         run: |
           cp out/main.pdf "Victor_Busque_CV_${{ steps.version.outputs.version }}.pdf"
+          cp out/main.md llms.txt
 
       - name: Create GitHub Release
         if: steps.content_check.outputs.changed != 'false'
@@ -486,6 +518,7 @@ jobs:
         run: |
           gh release create "${{ steps.version.outputs.tag }}" \
             "Victor_Busque_CV_${{ steps.version.outputs.version }}.pdf" \
+            llms.txt \
             --title "CV ${{ steps.version.outputs.version }}" \
             --notes "## Changes since ${{ steps.changelog.outputs.prev_tag }}
 
