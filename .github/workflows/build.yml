@@ -405,6 +405,12 @@ jobs:
           name: cv-pdf
           path: ./out
 
+      - name: Download built Markdown
+        uses: actions/download-artifact@v8
+        with:
+          name: cv-md
+          path: ./out
+
       - name: Compute next version
         id: version
         env:
