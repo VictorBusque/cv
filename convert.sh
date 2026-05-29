@@ -98,8 +98,31 @@ generate_html() {
         -t html5 \
         --standalone \
         --metadata title="Víctor Busqué Somacarrera — CV" \
-        --css="" \
         -o "$OUTDIR/main.html"
+
+    # Embed CV stylesheet inline so the HTML is fully self-contained
+    CSS_FILE="assets/cv.css"
+    if [ -f "$CSS_FILE" ]; then
+        python3 -c "
+import sys, re
+css = open('$CSS_FILE').read()
+html = open('$OUTDIR/main.html').read()
+html = re.sub(r'<style>.*?</style>', '<style>\n' + css + '\n</style>', html, flags=re.DOTALL)
+open('$OUTDIR/main.html', 'w').write(html)
+"
+        # Remove empty stylesheet link tag
+        sed -i '/<link rel="stylesheet" href="" \/>/d' "$OUTDIR/main.html"
+    fi
+
+    # Clean up pandoc artifacts
+    # Remove the <header> title block (hidden by CSS anyway)
+    perl -0777 -pi -e 's|<header id="title-block-header">\s*<h1 class="title">.*?</h1>\s*</header>\n?||s' "$OUTDIR/main.html"
+    # Strip all math inline spans, keeping their text content (handles split tags)
+    perl -0777 -pi -e 's#<span\s+class="math inline">(.*?)</span>#$1#gs' "$OUTDIR/main.html"
+    # Clean up any orphaned span tags that weren't matched
+    perl -0777 -pi -e 's#</?span class="math inline">##gs' "$OUTDIR/main.html"
+    # Normalize pipe separators: collapse whitespace around pipes
+    perl -0777 -pi -e 's#\s*\|\s*# | #g' "$OUTDIR/main.html"
     echo "✅ $OUTDIR/main.html"
 }
 

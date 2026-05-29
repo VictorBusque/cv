@@ -233,21 +233,21 @@ jobs:
         with:
           name: cv-pdf
           path: out/main.pdf
-          retention-days: 5
+          retention-days: 30
 
       - name: Upload HTML artifact
         uses: actions/upload-artifact@v7
         with:
           name: cv-html
           path: out/main.html
-          retention-days: 5
+          retention-days: 30
 
       - name: Upload Markdown artifact
         uses: actions/upload-artifact@v7
         with:
           name: cv-md
           path: out/main.md
-          retention-days: 5
+          retention-days: 30
 
       - name: Generate build summary
         if: always()
@@ -318,6 +318,12 @@ jobs:
           name: cv-pdf
           path: ./new
 
+      - name: Download built HTML
+        uses: actions/download-artifact@v8
+        with:
+          name: cv-html
+          path: ./new
+
       - name: Download latest release PDF
         id: prev_release
         env:
@@ -354,6 +360,9 @@ jobs:
             pdftoppm -png -r 150 ./new/main.pdf diff-output/new-page
           fi
 
+          # Include HTML in diff artifact for review
+          cp ./new/main.html diff-output/cv.html 2>/dev/null || true
+
       - name: Upload diff artifact
         uses: actions/upload-artifact@v7
         with:
@@ -385,7 +394,7 @@ jobs:
           fi
 
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "> 📥 Download the **cv-visual-diff** artifact for side-by-side page images." >> $GITHUB_STEP_SUMMARY
+          echo "> 📥 Download the **cv-visual-diff** artifact for side-by-side page images and the HTML version." >> $GITHUB_STEP_SUMMARY
 
   # ── Job 4: Release (only on push to main) ────────────────────────
   release:
@@ -409,6 +418,12 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: cv-md
+          path: ./out
+
+      - name: Download built HTML
+        uses: actions/download-artifact@v8
+        with:
+          name: cv-html
           path: ./out
 
       - name: Compute next version
@@ -479,11 +494,52 @@ jobs:
 
           if [ -n "$PREV_TAG" ]; then
             echo "prev_tag=${PREV_TAG}" >> "$GITHUB_OUTPUT"
-            NOTES=$(git log "${PREV_TAG}"..HEAD --pretty=format:"- %s" --no-merges)
+            COMMITS=$(git log "${PREV_TAG}"..HEAD --pretty=format:"%s" --no-merges)
           else
             echo "prev_tag=none" >> "$GITHUB_OUTPUT"
-            NOTES=$(git log --pretty=format:"- %s" --no-merges)
+            COMMITS=$(git log --pretty=format:"%s" --no-merges)
           fi
+
+          # Categorize commits by conventional commit type
+          FEATURES=""
+          FIXES=""
+          DOCS=""
+          CHORES=""
+          REFACTOR=""
+          OTHER=""
+          while IFS= read -r msg; do
+            [ -z "$msg" ] && continue
+            case "$msg" in
+              cv:*|feat:*)    FEATURES="${FEATURES}- ${msg}"$'\n' ;;
+              fix:*)          FIXES="${FIXES}- ${msg}"$'\n' ;;
+              docs:*)         DOCS="${DOCS}- ${msg}"$'\n' ;;
+              chore:*|ci:*)   CHORES="${CHORES}- ${msg}"$'\n' ;;
+              refactor:*)     REFACTOR="${REFACTOR}- ${msg}"$'\n' ;;
+              *)              OTHER="${OTHER}- ${msg}"$'\n' ;;
+            esac
+          done <<< "$COMMITS"
+
+          # Build structured notes
+          NOTES=""
+          for section in "### Changed" "$FEATURES" "### Fixed" "$FIXES" "### Documentation" "$DOCS" "### Maintenance" "$CHORES" "### Refactored" "$REFACTOR"; do
+            # Skip empty section headers
+            content="${section$'\n'}"
+            if [ -n "$FEATURES" ] && [ "$section" = "### Changed" ]; then
+              NOTES="${NOTES}${section}"$'\n'"${FEATURES}"$'\n'
+            elif [ -n "$FIXES" ] && [ "$section" = "### Fixed" ]; then
+              NOTES="${NOTES}${section}"$'\n'"${FIXES}"$'\n'
+            elif [ -n "$DOCS" ] && [ "$section" = "### Documentation" ]; then
+              NOTES="${NOTES}${section}"$'\n'"${DOCS}"$'\n'
+            elif [ -n "$CHORES" ] && [ "$section" = "### Maintenance" ]; then
+              NOTES="${NOTES}${section}"$'\n'"${CHORES}"$'\n'
+            elif [ -n "$REFACTOR" ] && [ "$section" = "### Refactored" ]; then
+              NOTES="${NOTES}${section}"$'\n'"${REFACTOR}"$'\n'
+            fi
+          done
+          if [ -n "$OTHER" ]; then
+            NOTES="${NOTES}### Other"$'\n'"${OTHER}"
+          fi
+          NOTES=$(echo "$NOTES" | sed '/^$/d')
 
           {
             echo "notes<<RELEASE_EOF"
@@ -499,22 +555,23 @@ jobs:
           echo "|:-------|:------|" >> $GITHUB_STEP_SUMMARY
           echo "| Version | \`${{ steps.version.outputs.version }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| PDF | \`Victor_Busque_CV_${{ steps.version.outputs.version }}.pdf\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| HTML | \`Victor_Busque_CV_${{ steps.version.outputs.version }}.html\` |" >> $GITHUB_STEP_SUMMARY
           echo "| Previous | ${PREV_TAG:-none} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           if [ -n "$NOTES" ]; then
             echo "<details><summary><strong>Changelog</strong></summary>" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
             echo "$NOTES" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
             echo "</details>" >> $GITHUB_STEP_SUMMARY
           fi
 
-      - name: Rename PDF with version
+      - name: Rename outputs with version
         if: steps.content_check.outputs.changed != 'false'
         run: |
           cp out/main.pdf "Victor_Busque_CV_${{ steps.version.outputs.version }}.pdf"
+          cp out/main.html "Victor_Busque_CV_${{ steps.version.outputs.version }}.html"
           cp out/main.md llms.txt
 
       - name: Create GitHub Release
@@ -524,6 +581,7 @@ jobs:
         run: |
           gh release create "${{ steps.version.outputs.tag }}" \
             "Victor_Busque_CV_${{ steps.version.outputs.version }}.pdf" \
+            "Victor_Busque_CV_${{ steps.version.outputs.version }}.html" \
             llms.txt \
             --title "CV ${{ steps.version.outputs.version }}" \
             --notes "## Changes since ${{ steps.changelog.outputs.prev_tag }}
