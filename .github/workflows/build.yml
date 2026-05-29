@@ -521,23 +521,23 @@ jobs:
 
           # Build structured notes
           NOTES=""
-          for section in "### Changed" "$FEATURES" "### Fixed" "$FIXES" "### Documentation" "$DOCS" "### Maintenance" "$CHORES" "### Refactored" "$REFACTOR"; do
-            # Skip empty section headers
-            content="${section$'\n'}"
-            if [ -n "$FEATURES" ] && [ "$section" = "### Changed" ]; then
-              NOTES="${NOTES}${section}"$'\n'"${FEATURES}"$'\n'
-            elif [ -n "$FIXES" ] && [ "$section" = "### Fixed" ]; then
-              NOTES="${NOTES}${section}"$'\n'"${FIXES}"$'\n'
-            elif [ -n "$DOCS" ] && [ "$section" = "### Documentation" ]; then
-              NOTES="${NOTES}${section}"$'\n'"${DOCS}"$'\n'
-            elif [ -n "$CHORES" ] && [ "$section" = "### Maintenance" ]; then
-              NOTES="${NOTES}${section}"$'\n'"${CHORES}"$'\n'
-            elif [ -n "$REFACTOR" ] && [ "$section" = "### Refactored" ]; then
-              NOTES="${NOTES}${section}"$'\n'"${REFACTOR}"$'\n'
-            fi
-          done
+          if [ -n "$FEATURES" ]; then
+            NOTES="${NOTES}### Changed"$'\n'"${FEATURES}"$'\n'
+          fi
+          if [ -n "$FIXES" ]; then
+            NOTES="${NOTES}### Fixed"$'\n'"${FIXES}"$'\n'
+          fi
+          if [ -n "$DOCS" ]; then
+            NOTES="${NOTES}### Documentation"$'\n'"${DOCS}"$'\n'
+          fi
+          if [ -n "$CHORES" ]; then
+            NOTES="${NOTES}### Maintenance"$'\n'"${CHORES}"$'\n'
+          fi
+          if [ -n "$REFACTOR" ]; then
+            NOTES="${NOTES}### Refactored"$'\n'"${REFACTOR}"$'\n'
+          fi
           if [ -n "$OTHER" ]; then
-            NOTES="${NOTES}### Other"$'\n'"${OTHER}"
+            NOTES="${NOTES}### Other"$'\n'"${OTHER}"$'\n'
           fi
           NOTES=$(echo "$NOTES" | sed '/^$/d')
 
