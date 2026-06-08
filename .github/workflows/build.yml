@@ -220,12 +220,34 @@ jobs:
           echo "$SHORT" > /tmp/build_hash.txt
           echo "PDF fingerprint: ${SHORT}..."
 
+      - name: Convert to HTML & Markdown
+        id: convert
+        continue-on-error: true
+        run: |
+          chmod +x convert.sh
+          ./convert.sh all
+          echo "✅ HTML and Markdown generated"
+
       - name: Upload PDF artifact
         uses: actions/upload-artifact@v7
         with:
           name: cv-pdf
           path: out/main.pdf
-          retention-days: 5
+          retention-days: 30
+
+      - name: Upload HTML artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: cv-html
+          path: out/main.html
+          retention-days: 30
+
+      - name: Upload Markdown artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: cv-md
+          path: out/main.md
+          retention-days: 30
 
       - name: Generate build summary
         if: always()
@@ -234,6 +256,12 @@ jobs:
           ATS_RES=$(cat /tmp/build_ats.txt 2>/dev/null | head -1 | sed 's/^result=//' || echo '⚠️ Skipped')
           PDF_SIZE=$(du -h out/main.pdf 2>/dev/null | awk '{print $1}' || echo 'unknown')
           PDF_HASH=$(cat /tmp/build_hash.txt 2>/dev/null || echo 'unknown')
+          HTML_SIZE=$(du -h out/main.html 2>/dev/null | awk '{print $1}' || echo 'skipped')
+          MD_SIZE=$(du -h out/main.md 2>/dev/null | awk '{print $1}' || echo 'skipped')
+          CONVERT_RES="✅ Passed"
+          if [ ! -f out/main.html ] || [ ! -f out/main.md ]; then
+            CONVERT_RES="⚠️ Skipped (pandoc not available)"
+          fi
 
           # Overall verdict
           BUILD_PASS=true
@@ -253,14 +281,17 @@ jobs:
           echo "| PDF compilation | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
           echo "| Page count (max 2) | ${PAGES_RES} |" >> $GITHUB_STEP_SUMMARY
           echo "| ATS text validation | ${ATS_RES} |" >> $GITHUB_STEP_SUMMARY
+          echo "| HTML/MD conversion | ${CONVERT_RES} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          echo "<details><summary><strong>PDF metadata</strong></summary>" >> $GITHUB_STEP_SUMMARY
+          echo "<details><summary><strong>Output files</strong></summary>" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|:---------|:------|" >> $GITHUB_STEP_SUMMARY
-          echo "| File size | \`${PDF_SIZE}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| SHA-256 | \`${PDF_HASH}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| File | Size |" >> $GITHUB_STEP_SUMMARY
+          echo "|:-----|:-----|" >> $GITHUB_STEP_SUMMARY
+          echo "| \`main.pdf\` | \`${PDF_SIZE}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| \`main.html\` | \`${HTML_SIZE}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| \`main.md\` | \`${MD_SIZE}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| PDF SHA-256 | \`${PDF_HASH}\` |" >> $GITHUB_STEP_SUMMARY
           echo "</details>" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
@@ -285,6 +316,12 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: cv-pdf
+          path: ./new
+
+      - name: Download built HTML
+        uses: actions/download-artifact@v8
+        with:
+          name: cv-html
           path: ./new
 
       - name: Download latest release PDF
@@ -323,6 +360,9 @@ jobs:
             pdftoppm -png -r 150 ./new/main.pdf diff-output/new-page
           fi
 
+          # Include HTML in diff artifact for review
+          cp ./new/main.html diff-output/cv.html 2>/dev/null || true
+
       - name: Upload diff artifact
         uses: actions/upload-artifact@v7
         with:
@@ -354,7 +394,7 @@ jobs:
           fi
 
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "> 📥 Download the **cv-visual-diff** artifact for side-by-side page images." >> $GITHUB_STEP_SUMMARY
+          echo "> 📥 Download the **cv-visual-diff** artifact for side-by-side page images and the HTML version." >> $GITHUB_STEP_SUMMARY
 
   # ── Job 4: Release (only on push to main) ────────────────────────
   release:
@@ -372,6 +412,18 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: cv-pdf
+          path: ./out
+
+      - name: Download built Markdown
+        uses: actions/download-artifact@v8
+        with:
+          name: cv-md
+          path: ./out
+
+      - name: Download built HTML
+        uses: actions/download-artifact@v8
+        with:
+          name: cv-html
           path: ./out
 
       - name: Compute next version
@@ -442,11 +494,52 @@ jobs:
 
           if [ -n "$PREV_TAG" ]; then
             echo "prev_tag=${PREV_TAG}" >> "$GITHUB_OUTPUT"
-            NOTES=$(git log "${PREV_TAG}"..HEAD --pretty=format:"- %s" --no-merges)
+            COMMITS=$(git log "${PREV_TAG}"..HEAD --pretty=format:"%s" --no-merges)
           else
             echo "prev_tag=none" >> "$GITHUB_OUTPUT"
-            NOTES=$(git log --pretty=format:"- %s" --no-merges)
+            COMMITS=$(git log --pretty=format:"%s" --no-merges)
           fi
+
+          # Categorize commits by conventional commit type
+          FEATURES=""
+          FIXES=""
+          DOCS=""
+          CHORES=""
+          REFACTOR=""
+          OTHER=""
+          while IFS= read -r msg; do
+            [ -z "$msg" ] && continue
+            case "$msg" in
+              cv:*|feat:*)    FEATURES="${FEATURES}- ${msg}"$'\n' ;;
+              fix:*)          FIXES="${FIXES}- ${msg}"$'\n' ;;
+              docs:*)         DOCS="${DOCS}- ${msg}"$'\n' ;;
+              chore:*|ci:*)   CHORES="${CHORES}- ${msg}"$'\n' ;;
+              refactor:*)     REFACTOR="${REFACTOR}- ${msg}"$'\n' ;;
+              *)              OTHER="${OTHER}- ${msg}"$'\n' ;;
+            esac
+          done <<< "$COMMITS"
+
+          # Build structured notes
+          NOTES=""
+          if [ -n "$FEATURES" ]; then
+            NOTES="${NOTES}### Changed"$'\n'"${FEATURES}"$'\n'
+          fi
+          if [ -n "$FIXES" ]; then
+            NOTES="${NOTES}### Fixed"$'\n'"${FIXES}"$'\n'
+          fi
+          if [ -n "$DOCS" ]; then
+            NOTES="${NOTES}### Documentation"$'\n'"${DOCS}"$'\n'
+          fi
+          if [ -n "$CHORES" ]; then
+            NOTES="${NOTES}### Maintenance"$'\n'"${CHORES}"$'\n'
+          fi
+          if [ -n "$REFACTOR" ]; then
+            NOTES="${NOTES}### Refactored"$'\n'"${REFACTOR}"$'\n'
+          fi
+          if [ -n "$OTHER" ]; then
+            NOTES="${NOTES}### Other"$'\n'"${OTHER}"$'\n'
+          fi
+          NOTES=$(echo "$NOTES" | sed '/^$/d')
 
           {
             echo "notes<<RELEASE_EOF"
@@ -462,22 +555,24 @@ jobs:
           echo "|:-------|:------|" >> $GITHUB_STEP_SUMMARY
           echo "| Version | \`${{ steps.version.outputs.version }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| PDF | \`Victor_Busque_CV_${{ steps.version.outputs.version }}.pdf\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| HTML | \`Victor_Busque_CV_${{ steps.version.outputs.version }}.html\` |" >> $GITHUB_STEP_SUMMARY
           echo "| Previous | ${PREV_TAG:-none} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           if [ -n "$NOTES" ]; then
             echo "<details><summary><strong>Changelog</strong></summary>" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
             echo "$NOTES" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
             echo "</details>" >> $GITHUB_STEP_SUMMARY
           fi
 
-      - name: Rename PDF with version
+      - name: Rename outputs with version
         if: steps.content_check.outputs.changed != 'false'
         run: |
           cp out/main.pdf "Victor_Busque_CV_${{ steps.version.outputs.version }}.pdf"
+          cp out/main.html "Victor_Busque_CV_${{ steps.version.outputs.version }}.html"
+          cp out/main.md llms.txt
 
       - name: Create GitHub Release
         if: steps.content_check.outputs.changed != 'false'
@@ -486,6 +581,8 @@ jobs:
         run: |
           gh release create "${{ steps.version.outputs.tag }}" \
             "Victor_Busque_CV_${{ steps.version.outputs.version }}.pdf" \
+            "Victor_Busque_CV_${{ steps.version.outputs.version }}.html" \
+            llms.txt \
             --title "CV ${{ steps.version.outputs.version }}" \
             --notes "## Changes since ${{ steps.changelog.outputs.prev_tag }}
 
