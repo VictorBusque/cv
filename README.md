@@ -53,6 +53,7 @@ All commit messages must follow the format `<type>: <description>` (max 72 chars
 | `refactor` | Restructure without content change |
 
 Examples:
+
 ```
 cv: added new dLocal bullet point
 ci: updated release workflow
